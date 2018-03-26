@@ -41,9 +41,9 @@ _What_ do you need to install for this program to work and _how_ to install them
 
 |Dependency|Tested with version|
 |---|---|
-|Java 8|
-|Tesseract 4|
-|FFmpeg 3.4|
+|Java 8|1.8.0_161-b12
+|Tesseract 4|4.00.00alpha
+|FFmpeg 3.4|3.4.2
 
 
 #### Installing dependencies
