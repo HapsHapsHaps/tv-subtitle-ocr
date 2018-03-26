@@ -1,0 +1,26 @@
+#COPY AND RENAME TO: DefaultConfig.properties
+sharedWorkDir=
+videoSourceDir=
+workerThreads=2
+debug=false
+
+# FrameExtraction
+ffmpegPath=/usr/bin/ffmpeg
+ffprobePath=/usr/bin/ffprobe
+
+# OCRProcessorFactory
+## Optional
+tesseractDataFolderPath=
+## See: https://github.com/tesseract-ocr/tesseract/wiki/Command-Line-Usage
+tesseractPageSegmentation=6
+## See: https://github.com/tesseract-ocr/tesseract/wiki/Command-Line-Usage
+tesseractOCREngineMode=3
+tesseractTrainedDataLanguage=dan
+
+# Solr - Index
+indexServerUrl=
+
+# Fedora Repository - Doms
+domsServerAddress=
+domsUserName=
+domsPassword=
