@@ -2,7 +2,6 @@ tessedit_char_whitelist abcdefghijklmnopqrstuvwxyzæøå0123456789ABCDEFGHIJKLMN
 language_model_penalty_non_freq_dict_word 0.1
 language_model_penalty_non_dict_word 0.15
 textord_heavy_nr 1
-textord_tabfind_vertical_horizontal_mix 0
 chop_enable 0
 unrecognised_char
 tessedit_reject_row_percent 5
