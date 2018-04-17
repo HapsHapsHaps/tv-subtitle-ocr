@@ -39,6 +39,13 @@ public class FrameExtractionProcessor implements IFrameExtractionProcessor {
         this.debug = debug;
     }
 
+    public FrameExtractionProcessor(File workDir) throws IOException {
+        this.workDir = workDir;
+        this.ffprobe = new FFprobe("/usr/bin/ffprobe");
+        this.ffmpeg = new FFmpeg("/usr/bin/ffmpeg");
+        this.debug = false;
+    }
+
     @Override
     public VideoInformation extractFrames(File video) throws IOException {
         VideoInformation returnInformation;
