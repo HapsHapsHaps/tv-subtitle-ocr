@@ -19,31 +19,6 @@
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>dk.kb.subtitles</groupId>
-            <artifactId>frame-extraction</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>dk.kb.subtitles</groupId>
-            <artifactId>frame-processing</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>dk.kb.subtitles</groupId>
-            <artifactId>ocr-processing</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>dk.kb.subtitles</groupId>
-            <artifactId>output</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>dk.kb.subtitles</groupId>
-            <artifactId>text-processing</artifactId>
-            <version>${project.version}</version>
-        </dependency>
         
         <!-- Index - Apache Solr -->
         <dependency>

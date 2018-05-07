@@ -1,8 +1,8 @@
 package dk.kb.tvsubtitleocr.extractor;
 
-import dk.kb.tvsubtitle.common.PropertiesFactory;
-import dk.kb.tvsubtitle.common.RuntimeProperties;
 import dk.kb.tvsubtitleocr.extractor.externalservice.SrtDomsClient;
+import dk.kb.tvsubtitleocr.lib.common.PropertiesFactory;
+import dk.kb.tvsubtitleocr.lib.common.RuntimeProperties;
 import dk.statsbiblioteket.doms.central.connectors.BackendMethodFailedException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

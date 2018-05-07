@@ -83,37 +83,45 @@ public class VideoProcessor {
 
         try(Timer timer = new Timer("Processing video", log)) { // Starts a timer.
 
-            Instant time1Start = Instant.now();
+            Instant extractFramesStart = Instant.now();
             // Gets frame as images from video.
             log.info("Extracting frames for video file: {}", videoFile.getAbsolutePath());
             if (!videoFile.exists()){
                 throw new IOException("File not found: " + videoFile.getAbsolutePath());
             }
             VideoInformation videoInformation = frameExtractionProcessor.extractFrames(videoFile);
-            Instant time1Stop = Instant.now();
+            Instant extractFramesStop = Instant.now();
 
             // preprocess here!
+            Instant pairMergeStart = Instant.now();
             log.info("Starts preprocessing frames");
             List<VideoFrame> preMergedFrames = preProcessor.mergeFramesInPairs(videoInformation.getFrames());
+            Instant pairMergeStop = Instant.now();
 
+            Instant similarStart = Instant.now();
             log.info("Starts finding similar frames.");
             List<List<VideoFrame>> similarFramesLists = preProcessor.findSimilarFrames(preMergedFrames);
             preMergedFrames = null;
+            Instant similarStop = Instant.now();
 
             System.gc(); // Suggest to the Garbage collector to consider removing all the previously cached image content
 
-            Instant time2Start = Instant.now();
+            Instant ocrStart = Instant.now();
             // Get the text from the images by Pre-processing and running them trough Tesseract.
             log.info("Processing frames for video Uuid: {}", videoInformation.getUuid());
             LinkedMap<VideoFrame, List<String>> ocrResults = preprocessAndOCR(similarFramesLists);
             similarFramesLists = null;
-            Instant time2Stop = Instant.now();
+            Instant ocrStop = Instant.now();
 
             log.info("Processing times:\n " +
                             "ExtractFrames: {} seconds.\n" +
-                            "Prepare and tesseract images: {} seconds.",
-                    (Duration.between(time1Start, time1Stop)).getSeconds(),
-                    (Duration.between(time2Start, time2Stop)).getSeconds());
+                            "Tesseract images: {} seconds.\n" +
+                            "Pair Merge: {} seconds\n" +
+                            "Similar Merge: {} seconds\n",
+                    (Duration.between(extractFramesStart, extractFramesStop)).getSeconds(),
+                    (Duration.between(ocrStart, ocrStop)).getSeconds(),
+                    (Duration.between(pairMergeStart, pairMergeStop).getSeconds()),
+                    (Duration.between(similarStart, similarStop).getSeconds()));
 
             // Process TesseractResults.
             ocrResults = postProcessText(ocrResults);
