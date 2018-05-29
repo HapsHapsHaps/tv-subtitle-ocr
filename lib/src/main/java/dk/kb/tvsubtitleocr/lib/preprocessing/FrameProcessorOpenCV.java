@@ -1,4 +1,5 @@
 package dk.kb.tvsubtitleocr.lib.preprocessing;
+
 import org.bytedeco.javacpp.opencv_core;
 import org.bytedeco.javacv.Java2DFrameConverter;
 import org.bytedeco.javacv.OpenCVFrameConverter;
@@ -19,9 +20,10 @@ public class FrameProcessorOpenCV implements IFrameProcessor {
     /**
      * Inspiration, Rewritten java example of SO post:
      * https://stackoverflow.com/questions/34271356/extracting-text-opencv-java
-     *
+     * <p>
      * Takes a mat as parameter, double up the size of the picture, finding rects with another method,
      * finds and returns the bounding/gathered rect.
+     *
      * @param main
      * @return
      */
@@ -33,8 +35,8 @@ public class FrameProcessorOpenCV implements IFrameProcessor {
         doPyrUp(main, rgb);
 
         //find all text
-        imgRects = imgToRects(main);
-        for (opencv_core.Rect r:
+        imgRects = imgToRects(rgb);
+        for (opencv_core.Rect r :
                 imgRects) {
             drawRectangle(rgb, r, opencv_core.Scalar.CYAN);
         }
@@ -48,9 +50,10 @@ public class FrameProcessorOpenCV implements IFrameProcessor {
      * Due to testing and various abusing of this class, this method changes a lot.
      * This method takes a bufferedimage and converts it to a mat. OpenCV is using the mat for processing the image
      * and finding text.
-     *
+     * <p>
      * Finding the bounding box, and removing all textareas that is not contained by the bounding box, crops the image
      * and returns a cropped image only containing what is presumed to be the subtitle.
+     *
      * @param image (type: bufferedimage)
      * @return image cropped (type: bufferedimage)
      */
@@ -76,6 +79,7 @@ public class FrameProcessorOpenCV implements IFrameProcessor {
     /**
      * Generates RectangularData based on the BufferedImage input.
      * It generates two Points, which contains the overall Rectangle containing the sublist of Rectangles
+     *
      * @param image BufferedImage input
      * @return RectangularData
      */
@@ -91,8 +95,13 @@ public class FrameProcessorOpenCV implements IFrameProcessor {
         doPyrUp(mat, mat);
         List<opencv_core.Rect> rectList = imgToRects(mat);
 
+
         // Remove rectangles, which are NOT included within the bounding rect
         rectList.removeIf(x -> !isContained(rect, x));
+        for (opencv_core.Rect r :
+                rectList) {
+            drawRectangle(mat, r, opencv_core.Scalar.GRAY);
+        }
 
         // Convert org.bytedeco.javacpp.opencv_core.Rect to RectangularData
         List<RectangularData> rectDataList = rectList.stream().map(
@@ -107,7 +116,7 @@ public class FrameProcessorOpenCV implements IFrameProcessor {
         double rectWithinArea = 0d;
 
         //calculates the combined area of all the small textareas inside the bounding box.
-        for (opencv_core.Rect r:
+        for (opencv_core.Rect r :
                 rectList) {
             rectWithinArea += r.area();
         }
@@ -129,6 +138,7 @@ public class FrameProcessorOpenCV implements IFrameProcessor {
     /**
      * This method takes a image(type: mat), processes the image for easier text detection. The processing is giveing
      * a list of contours, which is used to analyse and find the rects(boxes) that is presumed to contain text.
+     *
      * @param rgb (image, type: mat)
      * @return list of rects.
      */
@@ -161,6 +171,7 @@ public class FrameProcessorOpenCV implements IFrameProcessor {
 
     /**
      * Select relevant contours
+     *
      * @param rgb
      * @param contours
      * @return
@@ -168,18 +179,21 @@ public class FrameProcessorOpenCV implements IFrameProcessor {
     private List<opencv_core.Rect> loopContours(opencv_core.Mat rgb, opencv_core.Mat bw, opencv_core.MatVector contours) {
         List<opencv_core.Rect> rects = new LinkedList<>();
 
-        for (int idx = 0; idx < contours.size(); idx++) {
+        if (contours.size() < 150) { // Continue if contours are less than 150
+            for (int idx = 0; idx < contours.size(); idx++) {
+                opencv_core.Mat points = contours.get(idx);
 
-            opencv_core.Mat points = contours.get(idx);
+                opencv_core.Rect rect = makeBoundingRect(points);
 
-            opencv_core.Rect rect = makeBoundingRect(points);
-
-            if (rect.area() < (rgb.size().area() * 0.25)) {
-                if ((rect.height() > 20 && rect.width() > 16)) {
-                    if (rect.height() < rect.width()) {
-                        rects.add(rect);
+                if (rect.width() > rgb.size().width() * 0.03 || rect.height() > rgb.size().height() * 0.03) { // If height or width is smaller than 3 percent, skip. Filter smaller
+                    if (rect.area() < rgb.size().area() * 0.25) { // Filter bigger
+                        if (rect.height() < rect.width()) { // Keep wider than taller.
+                            rects.add(rect);
+                        }
                     }
                 }
+
+
             }
         }
         return rects;
@@ -188,7 +202,7 @@ public class FrameProcessorOpenCV implements IFrameProcessor {
     /**
      * Takes a image(type: mat) and and list of rectangles within the image.
      * With these parameters, the most likely rect including the subtitle is calculated
-     *
+     * <p>
      * For this method we are using a F1-score-method for an analysis of what is most likely to be a subtitle.
      *
      * @param imgRects (Type: List of rects)
@@ -273,7 +287,7 @@ public class FrameProcessorOpenCV implements IFrameProcessor {
         for (opencv_core.Rect startNode : rects) {
 
             boolean somethingIncludedThisTimeRound = false;
-            List<opencv_core.Rect> includes = new LinkedList<>(Arrays.asList(startNode));
+            List<opencv_core.Rect> includes = new LinkedList<>(Collections.singletonList(startNode));
             Set<opencv_core.Rect> nodes = new HashSet<>(rects);
             nodes.remove(startNode);
 
@@ -290,6 +304,8 @@ public class FrameProcessorOpenCV implements IFrameProcessor {
                 nodes.removeAll(includes);
 
             } while (somethingIncludedThisTimeRound);
+            if (results.keySet().containsAll(rects))
+                break;
             results.put(startNode, includes);
         }
 
@@ -317,7 +333,7 @@ public class FrameProcessorOpenCV implements IFrameProcessor {
 
         int trashSpace = areaAfterInclude - areaBeforeInclude - areaOfNode;
 
-        return (areaOfNode * 3 > trashSpace * 1.1);
+        return (areaOfNode > trashSpace * 1.3);
 
     }
 

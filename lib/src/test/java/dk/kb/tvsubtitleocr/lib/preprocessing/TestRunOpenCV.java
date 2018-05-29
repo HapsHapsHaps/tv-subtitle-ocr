@@ -1,4 +1,7 @@
 package dk.kb.tvsubtitleocr.lib.preprocessing;
+
+import dk.kb.tvsubtitleocr.lib.frameextraction.FrameExtractionProcessor;
+import dk.kb.tvsubtitleocr.lib.frameextraction.VideoFrame;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -19,9 +22,10 @@ import java.util.stream.Collectors;
 public class TestRunOpenCV {
 
     private static FrameProcessorOpenCV frameProcessor;
-//    private static final Path imageLocation = Paths.get("/home/armo/Projects/subtitles-test/testdata/output1145.png");
-    private static final Path imageLocation = Paths.get("/home/armo/Projects/subtitles-test/working/frameExtraction/");
-    private static final Path outputLocation = Paths.get("/home/armo/Projects/subtitles-test/out/");
+    //    private static final Path imageLocation = Paths.get("/home/armo/Projects/subtitles-test/testdata/output1145.png");
+    private static final Path imageLocation = Paths.get("/home/andreas/Projects/subtitles-test/originals/");
+    private static final Path outputLocation = Paths.get("/home/andreas/Projects/subtitles-test/out/");
+    int i = 0;
 
     @Test
     @Disabled
@@ -30,6 +34,24 @@ public class TestRunOpenCV {
         frameProcessor = new FrameProcessorOpenCV();
 
         testRunOpenCV.testRun();
+
+    }
+
+    @Test
+    @Disabled
+    public void generateRects() throws IOException {
+        System.out.println("Start");
+        FrameProcessorOpenCV frameProcessorOpenCV = new FrameProcessorOpenCV();
+        FrameExtractionProcessor frameExtractionProcessor = new FrameExtractionProcessor(imageLocation.toFile());
+        List<VideoFrame> videoFrames = frameExtractionProcessor.frameFilesToVideoFrame(frameExtractionProcessor.getFrameFiles(imageLocation.toFile()), 2800 * 1000, 2);
+        System.out.println("Writing images");
+        i = 0;
+        for (VideoFrame vf : videoFrames) {
+            RectangularData rectangularData = frameProcessorOpenCV.generateData(vf.getFrame());
+            ImageIO.write(rectangularData.getFrame(), "png", new File(outputLocation + vf.getFileName()));
+            i++;
+        }
+        i = 0;
 
     }
 
@@ -58,8 +80,8 @@ public class TestRunOpenCV {
         printIndex.set(1);
         frames.replaceAll((BufferedImage frame) -> {
             BufferedImage img = frameProcessor.processFrame(frame);
-            try{
-                ImageIO.write(img, "png", new File(outputLocation.toFile(), printIndex+""));
+            try {
+                ImageIO.write(img, "png", new File(outputLocation.toFile(), printIndex + ""));
             } catch (IOException e) {
                 e.printStackTrace();
             }
