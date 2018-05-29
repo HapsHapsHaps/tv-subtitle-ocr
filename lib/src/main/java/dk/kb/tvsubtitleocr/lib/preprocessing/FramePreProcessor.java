@@ -145,7 +145,7 @@ public class FramePreProcessor {
                         loopIdx = loopIdx + 2;
                     } else {
                         // Loose frames should also have a chance.
-                        if (data1.getRectangularDataList().size() > 2 && data1.getPrecision() > 0.5d) {
+                        if (data1.getRectangularDataList().size() >= 1 && data1.getArea() > 100) {
                             log.debug("Caught loose frame? {} / {}", loopIdx, frames.size());
                             mergedFrames.remove(mergedFrames.size() - 1);
 
