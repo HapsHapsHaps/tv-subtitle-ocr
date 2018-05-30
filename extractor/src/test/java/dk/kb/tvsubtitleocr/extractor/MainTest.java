@@ -41,8 +41,9 @@ public class MainTest {
         VideoProcessor videoProcessor = new VideoProcessor(properties);
 
         log.info("Running program.");
-        File video = new File("/home/andreas/2018-04-09_15-56-59.mp4");
-
+//        File video = new File("/home/andreas/Videos/new-girl-s1e1-downsize.m4v");
+        File video = new File("/home/andreas/Videos/dr1-4.mp4");
+        //File video = new File("/home/andreas/Videos/dr1-8.mp4");
         Path workDir = Paths.get(properties.getProperty(RuntimeProperties.ResourceName.sharedWorkDir));
         Path srtPath = Paths.get(workDir.toString(), "/subtitles.srt");
 

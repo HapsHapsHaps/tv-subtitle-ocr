@@ -145,7 +145,7 @@
                             <!--<addClasspath>true</addClasspath>-->
                             <!--<classpathPrefix>lib/</classpathPrefix>-->
                             <!-- Jar file entry point -->
-                            <mainClass>Main</mainClass>
+                            <mainClass>dk.hapshapshaps.classifier.objectdetection.Main</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

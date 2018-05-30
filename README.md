@@ -25,7 +25,7 @@ we will refer to the _readme_ in each module.
  * [Common](common/README.md) General toolbox, used throughout the system
  * [Frame Extraction](frame-extraction/README.md) to extract frames from a video
  * [Frame Processing](frame-processing/README.md) to pre process frames before they go into the OCR engine
- * [Main](main/README.md) to run the program
+ * [dk.hapshapshaps.classifier.objectdetection.Main](main/README.md) to run the program
  * [OCR processing](ocr-processing/README.md) to run OCR analysis on the frames extracted and processed
  * [Output](output/README.md) SRT generation
  * [Test Resources](test-resources/README.md) when testing the program, configs and other test resources are loaded from here.

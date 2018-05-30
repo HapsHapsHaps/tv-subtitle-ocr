@@ -1,4 +1,4 @@
-### Main
+### dk.hapshapshaps.classifier.objectdetection.Main
 This is the module where all the programs main methods are located and thus the point of entry to the program.
 
 ## About

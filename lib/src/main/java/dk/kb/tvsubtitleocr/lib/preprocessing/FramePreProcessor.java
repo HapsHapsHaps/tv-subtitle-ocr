@@ -1,5 +1,9 @@
 package dk.kb.tvsubtitleocr.lib.preprocessing;
 
+import dk.hapshapshaps.classifier.objectdetection.Box;
+import dk.hapshapshaps.classifier.objectdetection.CustomObjectDetector;
+import dk.hapshapshaps.classifier.objectdetection.models.Recognition;
+import dk.hapshapshaps.classifier.objectdetection.models.RectFloats;
 import dk.kb.tvsubtitleocr.lib.common.Named;
 import dk.kb.tvsubtitleocr.lib.frameextraction.VideoFrame;
 import dk.statsbiblioteket.util.Pair;
@@ -7,6 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.concurrent.*;
@@ -15,14 +21,92 @@ import java.util.stream.Collectors;
 public class FramePreProcessor {
     final static Logger log = LoggerFactory.getLogger(FramePreProcessor.class);
     private final int workerThreads;
+    @Deprecated
     private final FrameProcessorOpenCV frameProcessorOpenCV;
+    private final CustomObjectDetector detector;
 
+
+    public FramePreProcessor(int workerThreads, File modelfile, File labelfile) throws IOException {
+        this.workerThreads = workerThreads;
+        this.frameProcessorOpenCV = new FrameProcessorOpenCV();
+        detector = new CustomObjectDetector(modelfile, labelfile);
+    }
 
     public FramePreProcessor(int workerThreads) {
         this.workerThreads = workerThreads;
         this.frameProcessorOpenCV = new FrameProcessorOpenCV();
+        detector = null;
     }
 
+    public BufferedImage clipoutFrame(BufferedImage frame, Box box) {
+        return frame.getSubimage(
+                box.getX(),
+                box.getY(),
+                box.getWidth(),
+                box.getHeight()
+        );
+    }
+
+    public List<VideoFrame> detectSubtitles(List<VideoFrame> frames) {
+        List<VideoFrame> resultFrames = new LinkedList<>();
+        List<Future<VideoFrame>> futureFrames = new LinkedList<>();
+
+        ExecutorService executorService = Executors.newFixedThreadPool(workerThreads);
+
+
+        for (VideoFrame frame :
+                frames) {
+            Callable<VideoFrame> detectSubtitlesProcessor = detectSubtitlesAsCallable(frame);
+            executorService.submit(detectSubtitlesProcessor);
+            Future<VideoFrame> futureFrame = executorService.submit(detectSubtitlesProcessor);
+            futureFrames.add(futureFrame);
+        }
+
+        futureFrames.forEach(videoFrameFuture -> {
+            try {
+                resultFrames.add(videoFrameFuture.get());
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            }
+        });
+
+        resultFrames.removeIf(videoFrame -> videoFrame.getFrame() == null);
+        return resultFrames;
+    }
+
+    private Callable<VideoFrame> detectSubtitlesAsCallable(VideoFrame frame) {
+        return () -> {
+            ArrayList<Recognition> recognitions = detector.classifyImage(frame.getFrame());
+            List<Box> boxes = toBoxes(recognitions);
+            if (boxes.size() >= 1)
+                frame.setFrame(clipoutFrame(frame.getFrame(), boxes.get(0)));
+            else {
+                frame.setFrame(null);
+            }
+            return frame;
+        };
+    }
+
+    private static List<Box> toBoxes(List<Recognition> recognitions) {
+        List<Box> boxes = new ArrayList<>();
+        for (Recognition recognition : recognitions) {
+            if (recognition.getConfidence() > 0.05f && recognition.getTitle().toLowerCase().equals("sub")) {
+                RectFloats location = recognition.getLocation();
+                int x = (int) location.getX();
+                int y = (int) location.getY();
+                int width = (int) location.getWidth() - x;
+                int height = (int) location.getHeight() - y;
+
+                boxes.add(new Box(x, y, width, height));
+            }
+        }
+        if (boxes.size() > 1)
+            boxes.sort((box1, box2) ->
+                    (box2.getHeight() * box2.getWidth()) - (box1.getHeight() * box1.getWidth()));
+        return boxes;
+    }
+
+    @Deprecated
     public VideoFrame mergeAndClipoutFrame(List<VideoFrame> frames) {
         VideoFrame returnFrame;
         if (frames.size() >= 2) {
@@ -105,6 +189,7 @@ public class FramePreProcessor {
      * @param frames An ordered list of VideoFrames in order
      * @return An ordered List of VideoFrames, with no duplicates and matching start and end times.
      */
+    @Deprecated
     public List<List<VideoFrame>> findSimilarFrames(List<VideoFrame> frames) {
         List<List<VideoFrame>> resultFrames = new LinkedList<>(); // List of merged images, with "optimal" box count
         List<VideoFrame> mergedFrames = new LinkedList<>(); // List of unmerged Frames, to be merged into one whole frame
@@ -204,6 +289,7 @@ public class FramePreProcessor {
      * @param afterMerge  Original with Merge!
      * @return true, if the merge is defined as a nice merge. Otherwise false.
      */
+    @Deprecated
     protected boolean isNiceMerge(RectangularData beforeMerge, RectangularData afterMerge) {
         boolean partlyInside = false;
         boolean precision = false;
@@ -244,7 +330,7 @@ public class FramePreProcessor {
         return (partlyInside && precision) && !dive;
     }
 
-
+    @Deprecated
     protected boolean partlyInside(RectangularData beforeMerge, RectangularData afterMerge) {
         boolean partlyInside = false;
         // Partly inside

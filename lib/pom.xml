@@ -27,6 +27,21 @@
             <artifactId>sbutil-common</artifactId>
             <version>0.5.57-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>org.tensorflow</groupId>
+            <artifactId>tensorflow</artifactId>
+            <version>1.8.0</version>
+        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>org.tensorflow</groupId>-->
+            <!--<artifactId>libtensorflow_jni</artifactId>-->
+            <!--<version>1.8.0</version>-->
+        <!--</dependency>-->
+        <dependency>
+            <groupId>org.tensorflow</groupId>
+            <artifactId>libtensorflow_jni_gpu</artifactId>
+            <version>1.8.0</version>
+        </dependency>
         <!--<dependency>-->
             <!--<groupId>dk.kb.subtitles</groupId>-->
             <!--<artifactId>common</artifactId>-->

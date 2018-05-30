@@ -131,7 +131,7 @@ public class VideoMassProcessor {
                 // Processes video through videoProcessor and get SRT file.
                 VideoProcessor videoProcessor = null;
                 try {
-                    videoProcessor = new VideoProcessor(properties, taskWorkDir);
+                    //videoProcessor = new VideoProcessor(properties, taskWorkDir);
                     videoProcessor.processVideo(video, srtPathInternal);
 
                     return srtPathInternal.toFile();

@@ -10,7 +10,7 @@ However, it does allow for different interpretations of OCR engines, as long as 
 
 ## Getting started
 This module depends currently on [Tesseract 4](https://github.com/tesseract-ocr/tesseract/tree/4.00.00alpha), which can be interchanged with different versions or OCR engines.
-This module is supposed to be executed from the [Main module](../main/README.md) in the applications context.
+This module is supposed to be executed from the [dk.hapshapshaps.classifier.objectdetection.Main module](../main/README.md) in the applications context.
 However, some manual tests are implemented, where you may execute this module manually.  
 
 

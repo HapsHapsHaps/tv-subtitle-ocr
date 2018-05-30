@@ -1,6 +1,8 @@
 #COPY AND RENAME TO: DefaultConfig.properties
 sharedWorkDir=
 videoSourceDir=
+modelPath=
+labelPath=
 workerThreads=2
 debug=false
 

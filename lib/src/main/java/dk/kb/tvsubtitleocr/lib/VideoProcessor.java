@@ -47,23 +47,29 @@ public class VideoProcessor {
     private final boolean debug;
 
     public VideoProcessor(RuntimeProperties properties) throws IOException {
-        this(properties, Paths.get(properties.getProperty(RuntimeProperties.ResourceName.sharedWorkDir)).toFile());
+        this(
+                properties,
+                Paths.get(properties.getProperty(RuntimeProperties.ResourceName.sharedWorkDir)).toFile(),
+                Paths.get(properties.getProperty(RuntimeProperties.ResourceName.modelPath)).toFile(),
+                Paths.get(properties.getProperty(RuntimeProperties.ResourceName.labelPath)).toFile());
     }
 
-    public VideoProcessor(RuntimeProperties properties, File workDir) throws IOException {
+    public VideoProcessor(RuntimeProperties properties, File workDir, File modelfile, File labelfile) throws IOException {
         this.properties = properties;
         this.workDir = workDir;
         this.debug = properties.getDebug();
         handleConfiguration(properties);
         frameExtractionProcessor = createFrameExtractionProcessor();
         srtProcessor = new GenerateSRT();
-        preProcessor = new FramePreProcessor(workerThreads);
+        preProcessor = new FramePreProcessor(workerThreads, modelfile, labelfile);
         ocrProcessorFactory = createOcrProcessorFactory();
         textProcessor = new TextProcessor();
     }
 
     private void handleConfiguration(RuntimeProperties configuration) throws RuntimeException {
         String workDir = configuration.getProperty(RuntimeProperties.ResourceName.sharedWorkDir);
+        String modelPath = configuration.getProperty(RuntimeProperties.ResourceName.modelPath);
+        String labelPath = configuration.getProperty(RuntimeProperties.ResourceName.labelPath);
 
         if (workDir == null) {
             throw new RuntimeException("sharedWorkDir not defined in properties file");
@@ -99,8 +105,9 @@ public class VideoProcessor {
             Instant pairMergeStop = Instant.now();
 
             Instant similarStart = Instant.now();
-            log.info("Starts finding similar frames.");
-            List<List<VideoFrame>> similarFramesLists = preProcessor.findSimilarFrames(preMergedFrames);
+            log.info("Object Detection: Finding subtitles");
+            List<VideoFrame> subtitleFrames = preProcessor.detectSubtitles(preMergedFrames);
+            //List<List<VideoFrame>> similarFramesLists = preProcessor.findSimilarFrames(preMergedFrames);
             preMergedFrames = null;
             Instant similarStop = Instant.now();
 
@@ -109,8 +116,8 @@ public class VideoProcessor {
             Instant ocrStart = Instant.now();
             // Get the text from the images by Pre-processing and running them trough Tesseract.
             log.info("Processing frames for video Uuid: {}", videoInformation.getUuid());
-            LinkedMap<VideoFrame, List<String>> ocrResults = preprocessAndOCR(similarFramesLists);
-            similarFramesLists = null;
+            LinkedMap<VideoFrame, List<String>> ocrResults = ocr(subtitleFrames);
+            //similarFramesLists = null;
             Instant ocrStop = Instant.now();
 
             log.info("Processing times:\n " +
@@ -131,6 +138,8 @@ public class VideoProcessor {
         } // Stops the timer and logs result.
     }
 
+
+
     private void generateSRT(LinkedMap<VideoFrame, List<String>> ocrResults, Path srtOutputFile) throws IOException {
         List<FrameSubtitle> subs = new LinkedList<>();
 
@@ -139,14 +148,14 @@ public class VideoProcessor {
         srtProcessor.createSRT(srtOutputFile, subs);
     }
 
-    private LinkedMap<VideoFrame, List<String>> preprocessAndOCR(List<List<VideoFrame>> videoFrames) {
+    private LinkedMap<VideoFrame, List<String>> ocr(List<VideoFrame> videoFrames) {
         LinkedMap<VideoFrame, Future<List<String>>> futureResult = new LinkedMap<>();
 
         ExecutorService executorService = Executors.newFixedThreadPool(workerThreads);
 
-        for (List<VideoFrame> frameSubList : videoFrames) {
+        for (VideoFrame videoFrame: videoFrames) {
             // Pre-process image.
-            VideoFrame videoFrame = preProcessor.mergeAndClipoutFrame(frameSubList);
+            //VideoFrame videoFrame = preProcessor.mergeAndClipoutFrame(frameSubList);
 
             // OCRProcessor must implement the interface Callable<> to be handled as a future.
             Callable<List<String>> ocrProcessor = ocrProcessorAsCallable(videoFrame.getFrame(), videoFrame);

@@ -7,7 +7,7 @@ This filters everything besides the edges of the text, and other noise in the im
 
 Another feature of the Frame Processing Module is to generate a RectangularData class, which main purpose is to contain data about the extracted contours.
 Because not all contours are relevant, and because this module is run mainly from other modules, it is relevant to check which data is associated with a given frame.
-See [Merge Frames in FramePreProcessor.java](../main/src/main/java/dk/kb/tvsubtitle/main/FramePreProcessor.java) for the implementing class, or [Documentation for Main Module](../main/README.md).
+See [Merge Frames in FramePreProcessor.java](../main/src/main/java/dk/kb/tvsubtitle/main/FramePreProcessor.java) for the implementing class, or [Documentation for dk.hapshapshaps.classifier.objectdetection.Main Module](../main/README.md).
 
 The three main classes in this module is:
  * FrameProcessorOpenCV.java
@@ -23,8 +23,8 @@ It also improves the subtitle extraction method, which extracts a snippet of the
 
 ## Getting Started
 
-This module contains no Main methods, because it is intended to be run as a library from another module, as a result it can not be run directly. 
-However, when testing this module, a Main method in the test directory were created, see [TestRun.java](src/test/java/dk/kb/tvsubtitle/frameprocessing/TestRun.java) to run module for itself. 
+This module contains no dk.hapshapshaps.classifier.objectdetection.Main methods, because it is intended to be run as a library from another module, as a result it can not be run directly. 
+However, when testing this module, a dk.hapshapshaps.classifier.objectdetection.Main method in the test directory were created, see [TestRun.java](src/test/java/dk/kb/tvsubtitle/frameprocessing/TestRun.java) to run module for itself. 
 
 ### Dependencies
 
