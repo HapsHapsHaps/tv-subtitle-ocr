@@ -1,7 +1,10 @@
-package dk.hapshapshaps.classifier.objectdetection;
+package dk.hapshapshaps.machinelearning.objectdetection;
 
-import dk.hapshapshaps.classifier.objectdetection.models.Recognition;
-import dk.hapshapshaps.classifier.objectdetection.models.RectFloats;
+
+import dk.hapshapshaps.machinelearning.objectdetection.CustomObjectDetector;
+import dk.hapshapshaps.machinelearning.objectdetection.models.Box;
+import dk.hapshapshaps.machinelearning.objectdetection.models.ObjectRecognition;
+import dk.hapshapshaps.machinelearning.objectdetection.models.RectFloats;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -39,7 +42,7 @@ public class ObjectDetection {
         BufferedImage testImage = ImageIO.read(new File("/home/andreas/Projects/subtitle-work/frameExtraction/00057.png"));
 
         // Act
-        ArrayList<Recognition> recognitions = detector.classifyImage(testImage);
+        ArrayList<ObjectRecognition> recognitions = detector.classifyImage(testImage);
         List<Box> boxes = toBoxes(recognitions);
         BufferedImage bufferedImage = drawBoxes(testImage, boxes);
 
@@ -60,7 +63,7 @@ public class ObjectDetection {
         for (File f :
                 files) {
             BufferedImage input = ImageIO.read(f);
-            List<Recognition> recognitions = detector.classifyImage(input);
+            List<ObjectRecognition> recognitions = detector.classifyImage(input);
             BufferedImage resultFrame = drawBoxes(input, toBoxes(recognitions));
             ImageIO.write(resultFrame, "png", Paths.get(resultDirectory.getAbsolutePath(), f.getName()).toFile());
         }
@@ -84,10 +87,47 @@ public class ObjectDetection {
 
             Callable callable = (Callable<BufferedImage>) () -> {
                 BufferedImage input = ImageIO.read(f);
-                ArrayList<Recognition> recognitions = detector.classifyImage(input);
+                ArrayList<ObjectRecognition> recognitions = detector.classifyImage(input);
                 return drawBoxes(input, toBoxes(recognitions));
             };
-            Future<BufferedImage> future = executors.submit(callable);
+            Future future = executors.submit(callable);
+            futures.add(future);
+        }
+        AtomicInteger i = new AtomicInteger();
+        futures.forEach(bufferedImageFuture -> {
+            try {
+                ImageIO.write(bufferedImageFuture.get(), "png", Paths.get(resultDirectory.getAbsolutePath(), String.valueOf(i.getAndIncrement() + ".png")).toFile());
+            } catch (InterruptedException | ExecutionException | IOException e) {
+                e.printStackTrace();
+            }
+        });
+
+
+
+        // Assert -> Manual test, check output directory
+        i.set(0);
+    }
+
+    @Disabled
+    @Test
+    public void canDetectDirectoryMultithreaddedMultiDetector() throws IOException {
+
+        // Arrange
+        ExecutorService executors = Executors.newFixedThreadPool(4);
+        List<Future<BufferedImage>> futures = new LinkedList<>();
+        File[] files = inputDirectory.listFiles();
+        Arrays.sort(files);
+
+        // Act
+        for (File f : files) {
+
+            Callable callable = (Callable<BufferedImage>) () -> {
+                CustomObjectDetector detector = new CustomObjectDetector(modelfile, labelfile); // Moved
+                BufferedImage input = ImageIO.read(f);
+                ArrayList<ObjectRecognition> recognitions = detector.classifyImage(input);
+                return drawBoxes(input, toBoxes(recognitions));
+            };
+            Future future = executors.submit(callable);
             futures.add(future);
         }
         AtomicInteger i = new AtomicInteger();
@@ -119,9 +159,9 @@ public class ObjectDetection {
         return image;
     }
 
-    private static List<Box> toBoxes(List<Recognition> recognitions) {
+    private static List<Box> toBoxes(List<ObjectRecognition> recognitions) {
         List<Box> boxes = new ArrayList<>();
-        for (Recognition recognition : recognitions) {
+        for (ObjectRecognition recognition : recognitions) {
             if (recognition.getConfidence() > 0.05f && recognition.getTitle().toLowerCase().equals("sub")) {
                 RectFloats location = recognition.getLocation();
                 int x = (int) location.getX();

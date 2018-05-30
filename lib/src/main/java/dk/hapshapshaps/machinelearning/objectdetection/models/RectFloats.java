@@ -1,4 +1,4 @@
-package dk.hapshapshaps.classifier.objectdetection.models;
+package dk.hapshapshaps.machinelearning.objectdetection.models;
 
 public class RectFloats {
     private final float x, y, width, height;

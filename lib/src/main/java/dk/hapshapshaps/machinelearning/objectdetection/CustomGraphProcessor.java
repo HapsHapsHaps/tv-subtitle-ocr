@@ -1,15 +1,15 @@
-package dk.hapshapshaps.classifier.objectdetection;
+package dk.hapshapshaps.machinelearning.objectdetection;
 
 import org.tensorflow.Graph;
 import org.tensorflow.Session;
 import org.tensorflow.Tensor;
-import dk.hapshapshaps.classifier.objectdetection.models.Detection;
+import dk.hapshapshaps.machinelearning.objectdetection.models.Detection;
 
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CustomClassifier implements AutoCloseable {
+public class CustomGraphProcessor implements AutoCloseable {
 
     String[] resultOperationNames = new String[] {"num_detections", "detection_boxes", "detection_scores",
             "detection_classes"/*, "detection_masks"*/};
@@ -30,7 +30,7 @@ public class CustomClassifier implements AutoCloseable {
     private float[] detection_classes = new float[MAX_RESULTS];
     private float[] detection_masks = new float[MAX_RESULTS];
 
-    public CustomClassifier(Graph graph) {
+    public CustomGraphProcessor(Graph graph) {
         this.session = new Session(graph);
         this.runner = session.runner();
     }

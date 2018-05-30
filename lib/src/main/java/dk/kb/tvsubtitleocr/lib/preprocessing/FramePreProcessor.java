@@ -1,9 +1,9 @@
 package dk.kb.tvsubtitleocr.lib.preprocessing;
 
-import dk.hapshapshaps.classifier.objectdetection.Box;
-import dk.hapshapshaps.classifier.objectdetection.CustomObjectDetector;
-import dk.hapshapshaps.classifier.objectdetection.models.Recognition;
-import dk.hapshapshaps.classifier.objectdetection.models.RectFloats;
+import dk.hapshapshaps.machinelearning.objectdetection.CustomObjectDetector;
+import dk.hapshapshaps.machinelearning.objectdetection.models.Box;
+import dk.hapshapshaps.machinelearning.objectdetection.models.ObjectRecognition;
+import dk.hapshapshaps.machinelearning.objectdetection.models.RectFloats;
 import dk.kb.tvsubtitleocr.lib.common.Named;
 import dk.kb.tvsubtitleocr.lib.frameextraction.VideoFrame;
 import dk.statsbiblioteket.util.Pair;
@@ -40,10 +40,10 @@ public class FramePreProcessor {
 
     public BufferedImage clipoutFrame(BufferedImage frame, Box box) {
         return frame.getSubimage(
-                box.getX(),
-                box.getY(),
-                box.getWidth(),
-                box.getHeight()
+                box.x,
+                box.y,
+                box.width,
+                box.height
         );
     }
 
@@ -76,7 +76,7 @@ public class FramePreProcessor {
 
     private Callable<VideoFrame> detectSubtitlesAsCallable(VideoFrame frame) {
         return () -> {
-            ArrayList<Recognition> recognitions = detector.classifyImage(frame.getFrame());
+            ArrayList<ObjectRecognition> recognitions = detector.classifyImage(frame.getFrame());
             List<Box> boxes = toBoxes(recognitions);
             if (boxes.size() >= 1)
                 frame.setFrame(clipoutFrame(frame.getFrame(), boxes.get(0)));
@@ -87,9 +87,9 @@ public class FramePreProcessor {
         };
     }
 
-    private static List<Box> toBoxes(List<Recognition> recognitions) {
+    private static List<Box> toBoxes(List<ObjectRecognition> recognitions) {
         List<Box> boxes = new ArrayList<>();
-        for (Recognition recognition : recognitions) {
+        for (ObjectRecognition recognition : recognitions) {
             if (recognition.getConfidence() > 0.05f && recognition.getTitle().toLowerCase().equals("sub")) {
                 RectFloats location = recognition.getLocation();
                 int x = (int) location.getX();
@@ -100,11 +100,9 @@ public class FramePreProcessor {
                 boxes.add(new Box(x, y, width, height));
             }
         }
-        if (boxes.size() > 1)
-            boxes.sort((box1, box2) ->
-                    (box2.getHeight() * box2.getWidth()) - (box1.getHeight() * box1.getWidth()));
         return boxes;
     }
+
 
     @Deprecated
     public VideoFrame mergeAndClipoutFrame(List<VideoFrame> frames) {

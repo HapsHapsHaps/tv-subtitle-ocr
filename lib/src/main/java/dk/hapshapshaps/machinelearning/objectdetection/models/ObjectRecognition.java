@@ -1,9 +1,9 @@
-package dk.hapshapshaps.classifier.objectdetection.models;
+package dk.hapshapshaps.machinelearning.objectdetection.models;
 
 /**
  * An immutable result returned by a Classifier describing what was recognized.
  */
-public class Recognition {
+public class ObjectRecognition {
     /**
      * A unique identifier for what has been recognized. Specific to the class, not the instance of
      * the object.
@@ -23,7 +23,7 @@ public class Recognition {
     /** Optional location within the source image for the location of the recognized object. */
     private RectFloats location;
 
-    public Recognition(
+    public ObjectRecognition(
             final String id, final String title, final Float confidence, final RectFloats location) {
         this.id = id;
         this.title = title;
