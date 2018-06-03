@@ -1,8 +1,10 @@
 #COPY AND RENAME TO: DefaultConfig.properties
 sharedWorkDir=
 videoSourceDir=
-modelPath=
-labelPath=
+objectModelPath=
+objectLabelPath=
+classifyModelPath=
+classifyLabelPath=
 workerThreads=2
 debug=false
 

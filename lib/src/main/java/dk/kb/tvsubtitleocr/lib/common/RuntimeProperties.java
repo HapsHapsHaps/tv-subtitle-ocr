@@ -9,8 +9,10 @@ public class RuntimeProperties {
     public enum ResourceName {
         sharedWorkDir,
         videoSourceDir,
-        modelPath,
-        labelPath,
+        objectModelPath,
+        objectLabelPath,
+        classifyModelPath,
+        classifyLabelPath,
         workerThreads,
         debug,
         ffmpegPath,
