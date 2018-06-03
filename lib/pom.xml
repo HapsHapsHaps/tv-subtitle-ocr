@@ -11,6 +11,13 @@
 
     <artifactId>lib</artifactId>
 
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
+
     <dependencies>
         <dependency>
             <groupId>net.bramp.ffmpeg</groupId>
@@ -28,20 +35,20 @@
             <version>0.5.57-SNAPSHOT</version>
         </dependency>
         <dependency>
-            <groupId>org.tensorflow</groupId>
-            <artifactId>tensorflow</artifactId>
-            <version>1.8.0</version>
+            <groupId>com.github.HapsHapsHaps</groupId>
+            <artifactId>machinelearning-subs</artifactId>
+            <version>03c333d63bfaa09639f7092a18492382beabd642</version> <!--Commit per May 31, 2018, sidste på dagen-->
         </dependency>
+        <!--<dependency>-->
+            <!--<groupId>dk.hapshaps</groupId>-->
+            <!--<artifactId>machinelearning-subs</artifactId>-->
+            <!--<version>1.0-SNAPSHOT</version>-->
+        <!--</dependency>-->
         <!--<dependency>-->
             <!--<groupId>org.tensorflow</groupId>-->
             <!--<artifactId>libtensorflow_jni</artifactId>-->
             <!--<version>1.8.0</version>-->
         <!--</dependency>-->
-        <dependency>
-            <groupId>org.tensorflow</groupId>
-            <artifactId>libtensorflow_jni_gpu</artifactId>
-            <version>1.8.0</version>
-        </dependency>
         <!--<dependency>-->
             <!--<groupId>dk.kb.subtitles</groupId>-->
             <!--<artifactId>common</artifactId>-->
