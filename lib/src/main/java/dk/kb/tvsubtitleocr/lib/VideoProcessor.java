@@ -50,26 +50,28 @@ public class VideoProcessor {
         this(
                 properties,
                 Paths.get(properties.getProperty(RuntimeProperties.ResourceName.sharedWorkDir)).toFile(),
-                Paths.get(properties.getProperty(RuntimeProperties.ResourceName.modelPath)).toFile(),
-                Paths.get(properties.getProperty(RuntimeProperties.ResourceName.labelPath)).toFile());
+                Paths.get(properties.getProperty(RuntimeProperties.ResourceName.objectModelPath)).toFile(),
+                Paths.get(properties.getProperty(RuntimeProperties.ResourceName.objectLabelPath)).toFile(),
+                Paths.get(properties.getProperty(RuntimeProperties.ResourceName.classifyModelPath)).toFile(),
+                Paths.get(properties.getProperty(RuntimeProperties.ResourceName.classifyLabelPath)).toFile());
     }
 
-    public VideoProcessor(RuntimeProperties properties, File workDir, File modelfile, File labelfile) throws IOException {
+    public VideoProcessor(RuntimeProperties properties, File workDir, File modelfile, File labelfile, File classifyModelfile, File classifyLabelfile) throws IOException {
         this.properties = properties;
         this.workDir = workDir;
         this.debug = properties.getDebug();
         handleConfiguration(properties);
         frameExtractionProcessor = createFrameExtractionProcessor();
         srtProcessor = new GenerateSRT();
-        preProcessor = new FramePreProcessor(workerThreads, modelfile, labelfile);
+        preProcessor = new FramePreProcessor(workerThreads, modelfile, labelfile, classifyModelfile, classifyLabelfile);
         ocrProcessorFactory = createOcrProcessorFactory();
         textProcessor = new TextProcessor();
     }
 
     private void handleConfiguration(RuntimeProperties configuration) throws RuntimeException {
         String workDir = configuration.getProperty(RuntimeProperties.ResourceName.sharedWorkDir);
-        String modelPath = configuration.getProperty(RuntimeProperties.ResourceName.modelPath);
-        String labelPath = configuration.getProperty(RuntimeProperties.ResourceName.labelPath);
+        String modelPath = configuration.getProperty(RuntimeProperties.ResourceName.objectModelPath);
+        String labelPath = configuration.getProperty(RuntimeProperties.ResourceName.objectLabelPath);
 
         if (workDir == null) {
             throw new RuntimeException("sharedWorkDir not defined in properties file");
@@ -99,17 +101,16 @@ public class VideoProcessor {
             Instant extractFramesStop = Instant.now();
 
             // preprocess here!
-            Instant pairMergeStart = Instant.now();
-            log.info("Starts preprocessing frames");
-            List<VideoFrame> preMergedFrames = preProcessor.mergeFramesInPairs(videoInformation.getFrames());
-            Instant pairMergeStop = Instant.now();
+            Instant classificationStart = Instant.now();
+            log.info("Classification: Sorting frames with subtitles");
+//            List<VideoFrame> classifiedFrames = preProcessor.classify(videoInformation.getFrames());
+            Instant classificationStop = Instant.now();
 
-            Instant similarStart = Instant.now();
+            Instant objectDetectionStart = Instant.now();
             log.info("Object Detection: Finding subtitles");
-            List<VideoFrame> subtitleFrames = preProcessor.detectSubtitles(preMergedFrames);
-            //List<List<VideoFrame>> similarFramesLists = preProcessor.findSimilarFrames(preMergedFrames);
-            preMergedFrames = null;
-            Instant similarStop = Instant.now();
+//            List<VideoFrame> subtitleFrames = preProcessor.detectSubtitles(classifiedFrames);
+            List<VideoFrame> subtitleFrames = preProcessor.detectSubtitles(videoInformation.getFrames());
+            Instant objectDetectionStop = Instant.now();
 
             System.gc(); // Suggest to the Garbage collector to consider removing all the previously cached image content
 
@@ -122,13 +123,13 @@ public class VideoProcessor {
 
             log.info("Processing times:\n " +
                             "ExtractFrames: {} seconds.\n" +
-                            "Tesseract images: {} seconds.\n" +
-                            "Pair Merge: {} seconds\n" +
-                            "Similar Merge: {} seconds\n",
+                            "Classify images: {} seconds.\n" +
+                            "Object Detect: {} seconds\n" +
+                            "Tesseract: {} seconds\n",
                     (Duration.between(extractFramesStart, extractFramesStop)).getSeconds(),
-                    (Duration.between(ocrStart, ocrStop)).getSeconds(),
-                    (Duration.between(pairMergeStart, pairMergeStop).getSeconds()),
-                    (Duration.between(similarStart, similarStop).getSeconds()));
+                    (Duration.between(classificationStart, classificationStop)).getSeconds(),
+                    (Duration.between(objectDetectionStart, objectDetectionStop).getSeconds()),
+                    (Duration.between(ocrStart, ocrStop).getSeconds()));
 
             // Process TesseractResults.
             ocrResults = postProcessText(ocrResults);

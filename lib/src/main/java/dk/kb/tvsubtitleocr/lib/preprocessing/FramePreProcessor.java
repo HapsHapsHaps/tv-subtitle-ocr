@@ -1,20 +1,24 @@
 package dk.kb.tvsubtitleocr.lib.preprocessing;
 
-import dk.hapshapshaps.machinelearning.objectdetection.CustomObjectDetector;
-import dk.hapshapshaps.machinelearning.objectdetection.models.Box;
-import dk.hapshapshaps.machinelearning.objectdetection.models.ObjectRecognition;
-import dk.hapshapshaps.machinelearning.objectdetection.models.RectFloats;
+import dk.hapshapshaps.machinelearning.classifier.Classifier;
+import dk.hapshapshaps.machinelearning.classifier.CustomClassifier;
+import dk.hapshapshaps.machinelearning.classifier.models.ClassifyRecognition;
+import dk.hapshapshaps.machinelearning.objectdetection.*;
+import dk.hapshapshaps.machinelearning.objectdetection.models.*;
 import dk.kb.tvsubtitleocr.lib.common.Named;
 import dk.kb.tvsubtitleocr.lib.frameextraction.VideoFrame;
 import dk.statsbiblioteket.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.RasterFormatException;
 import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
@@ -24,18 +28,24 @@ public class FramePreProcessor {
     @Deprecated
     private final FrameProcessorOpenCV frameProcessorOpenCV;
     private final CustomObjectDetector detector;
+    private final Classifier classifier;
+    private final ExecutorService executorService;
 
 
-    public FramePreProcessor(int workerThreads, File modelfile, File labelfile) throws IOException {
+    public FramePreProcessor(int workerThreads, File objectModelfile, File objectLabelfile, File classifyModelfile, File classifyLabelfile) throws IOException {
         this.workerThreads = workerThreads;
+        this.executorService = Executors.newFixedThreadPool(workerThreads);
         this.frameProcessorOpenCV = new FrameProcessorOpenCV();
-        detector = new CustomObjectDetector(modelfile, labelfile);
+        this.detector = new CustomObjectDetector(objectModelfile, objectLabelfile);
+        this.classifier = new CustomClassifier(classifyModelfile, classifyLabelfile);
     }
 
     public FramePreProcessor(int workerThreads) {
+        this.executorService = Executors.newFixedThreadPool(workerThreads);
         this.workerThreads = workerThreads;
         this.frameProcessorOpenCV = new FrameProcessorOpenCV();
-        detector = null;
+        this.detector = null;
+        this.classifier = null;
     }
 
     public BufferedImage clipoutFrame(BufferedImage frame, Box box) {
@@ -51,13 +61,10 @@ public class FramePreProcessor {
         List<VideoFrame> resultFrames = new LinkedList<>();
         List<Future<VideoFrame>> futureFrames = new LinkedList<>();
 
-        ExecutorService executorService = Executors.newFixedThreadPool(workerThreads);
-
 
         for (VideoFrame frame :
                 frames) {
             Callable<VideoFrame> detectSubtitlesProcessor = detectSubtitlesAsCallable(frame);
-            executorService.submit(detectSubtitlesProcessor);
             Future<VideoFrame> futureFrame = executorService.submit(detectSubtitlesProcessor);
             futureFrames.add(futureFrame);
         }
@@ -74,17 +81,66 @@ public class FramePreProcessor {
         return resultFrames;
     }
 
+    public List<VideoFrame> classify(List<VideoFrame> frames) {
+        List<Pair<VideoFrame, Boolean>> resultFrames = new LinkedList<>();
+        List<Future<Pair<VideoFrame, Boolean>>> futures = new LinkedList<>();
+
+        frames.forEach(frame -> {
+            Callable<Pair<VideoFrame, Boolean>> classifiedSubFrame = classifyAsCallable(frame);
+            futures.add(executorService.submit(classifiedSubFrame));
+        });
+
+        futures.forEach(pairFuture -> {
+            try {
+                resultFrames.add(pairFuture.get());
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            }
+        });
+        resultFrames.removeIf(videoFrameBooleanPair -> !videoFrameBooleanPair.getRight());
+        return resultFrames.stream().map(Pair::getLeft).collect(Collectors.toList());
+    }
+
+    private Callable<Pair<VideoFrame, Boolean>> classifyAsCallable(VideoFrame frame){
+        return () -> {
+            ClassifyRecognition classifyRecognition = classifier.classifyImage(frame.getFrame());
+            if(classifyRecognition.getLabel().equals("sub") && classifyRecognition.getConfidence() > 0.5f){
+                return new Pair<>(frame, true);
+            } else {
+                return new Pair<>(frame, false);
+            }
+        };
+    }
+
     private Callable<VideoFrame> detectSubtitlesAsCallable(VideoFrame frame) {
         return () -> {
             ArrayList<ObjectRecognition> recognitions = detector.classifyImage(frame.getFrame());
             List<Box> boxes = toBoxes(recognitions);
-            if (boxes.size() >= 1)
-                frame.setFrame(clipoutFrame(frame.getFrame(), boxes.get(0)));
-            else {
+            if (boxes.size() >= 1) {
+                //frame.setFrame(drawBoxes(frame.getFrame(), Collections.singletonList(boxes.get(0))));
+                BufferedImage oldframe = frame.getFrame();
+                try {
+                    frame.setFrame(clipoutFrame(frame.getFrame(), boxes.get(0)));
+                } catch (RasterFormatException e){
+                    e.printStackTrace();
+                }
+            } else {
                 frame.setFrame(null);
             }
             return frame;
         };
+    }
+
+    private static BufferedImage drawBoxes(BufferedImage image, List<Box> boxes) {
+        Graphics2D graph = image.createGraphics();
+        graph.setColor(Color.green);
+
+        for (Box box : boxes) {
+            graph.drawRect(box.x, box.y, box.width, box.height);
+        }
+
+        graph.dispose();
+        return image;
     }
 
     private static List<Box> toBoxes(List<ObjectRecognition> recognitions) {
