@@ -1,4 +1,5 @@
 package dk.kb.tvsubtitleocr.lib.frameextraction;
+
 import net.bramp.ffmpeg.FFmpeg;
 import net.bramp.ffmpeg.FFmpegExecutor;
 import net.bramp.ffmpeg.FFprobe;
@@ -25,9 +26,10 @@ public class FrameExtractionProcessor implements IFrameExtractionProcessor {
     private FFprobe ffprobe;
     private FFmpeg ffmpeg;
     private File workDir;
-    private int framesPerSecond = 2;
+//    private double framesPerSecond = 1;
+    private double framesPerSecond = 0.5;
     private String output; //decides name(%d for digits) + extention(.png) for the output
-//    private String ffmpegPath = "/usr/bin/ffmpeg";
+    //    private String ffmpegPath = "/usr/bin/ffmpeg";
 //    private String ffprobePath = "/usr/bin/ffprobe";
     //debug = true, when you don't want it to delete the files, and generate them if the folder is empty.
     protected final Boolean debug;
@@ -52,10 +54,9 @@ public class FrameExtractionProcessor implements IFrameExtractionProcessor {
         int videoLength = 0;
         File outPutDir = this.workDir;
 
-        if( ! debug || (debug && outPutDir.listFiles().length == 0)) {
+        if (!debug || (debug && outPutDir.listFiles().length == 0)) {
             extractVideoFramesToDisk(video, framesPerSecond, outPutDir);
-        }
-        else {
+        } else {
             log.info("{} is in debug with files in output folder. Frames wont be extracted.", getClass().getName());
         }
 
@@ -64,10 +65,9 @@ public class FrameExtractionProcessor implements IFrameExtractionProcessor {
         File[] frameFiles = getFrameFiles(outPutDir);
         List<VideoFrame> videoFrames = frameFilesToVideoFrame(frameFiles, videoLength, framesPerSecond);
 
-        if( ! debug) {
+        if (!debug) {
             Arrays.asList(frameFiles).forEach(File::delete);
-        }
-        else {
+        } else {
             log.info("{} is in debug. Frames wont be deleted.", getClass().getName());
         }
 
@@ -76,8 +76,8 @@ public class FrameExtractionProcessor implements IFrameExtractionProcessor {
         return returnInformation;
     }
 
-    public void extractVideoFramesToDisk(File video, int framesPerSecond, File outputDir) throws IOException {
-        String output = outputDir.getAbsolutePath() + "/" +"%05d.png";
+    public void extractVideoFramesToDisk(File video, double framesPerSecond, File outputDir) throws IOException {
+        String output = outputDir.getAbsolutePath() + "/" + "%05d.png";
         FFmpegProbeResult probeResult = getVideoProbeResults(video);
         FFmpegBuilder builder = new FFmpegBuilder()
                 .setVerbosity(FFmpegBuilder.Verbosity.WARNING)
@@ -85,6 +85,7 @@ public class FrameExtractionProcessor implements IFrameExtractionProcessor {
                 .addOutput(output)   // Filename for the destination
                 .setVideoQuality(1)
                 .disableAudio()
+//                .addExtraArgs("-vf", "fps=1/2")// + framesPerSecond)
                 .addExtraArgs("-vf", "fps=" + framesPerSecond)
                 .done();
 
@@ -97,13 +98,14 @@ public class FrameExtractionProcessor implements IFrameExtractionProcessor {
 
     /**
      * Gets the video length in milliseconds from the input video file.
+     *
      * @param video
      * @return Video length in milliseconds.
      * @throws IOException
      */
     public int getVideoLength(File video) throws IOException {
         FFmpegProbeResult probeResult = ffprobe.probe(video.getPath());
-        return (int)probeResult.getFormat().duration * 1000;
+        return (int) probeResult.getFormat().duration * 1000;
     }
 
     public FFmpegProbeResult getVideoProbeResults(File video) throws IOException {
@@ -116,16 +118,15 @@ public class FrameExtractionProcessor implements IFrameExtractionProcessor {
         return listOfFiles;
     }
 
-    public List<VideoFrame> frameFilesToVideoFrame(File[] files, int videoLength, int framesPerSecond) {
+    public List<VideoFrame> frameFilesToVideoFrame(File[] files, int videoLength, double framesPerSecond) {
         List<VideoFrame> frames = new ArrayList<>();
-        int timeInterval = 1000/framesPerSecond;
+        double timeInterval = 1000 / framesPerSecond;
         int frameMillisecondsStart = 0;
-        int frameMillisecondStop = frameMillisecondsStart+timeInterval;
+        int frameMillisecondStop = (int) (frameMillisecondsStart + timeInterval);
 
         for (int i = 0; i < files.length; i++) {
             //i*1000 because of the milliseconds and videoLength * framesPerSecond because with 2 fps we get double the amount of frames
-            if(i*1000>=videoLength*framesPerSecond)
-            {
+            if (i * 1000 >= videoLength * framesPerSecond) {
                 log.info("Ignoring: " + files[i].getName());
 //                files = ArrayUtils.remove(files, i);
                 // Ignore it.
@@ -140,20 +141,20 @@ public class FrameExtractionProcessor implements IFrameExtractionProcessor {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                if(frameInstance!=null) {
+                if (frameInstance != null) {
                     VideoFrame frame = new VideoFrame(frameInstance, frameName, frameMillisecondsStart, frameMillisecondStop);
                     frames.add(frame);
                 }
 
-                frameMillisecondsStart+=timeInterval;
-                frameMillisecondStop+=timeInterval;
+                frameMillisecondsStart += timeInterval;
+                frameMillisecondStop += timeInterval;
             }
         }
 
         return frames;
     }
 
-    private VideoInformation createVideoInformation(List<VideoFrame> frames, int milliseconds, File input){
+    private VideoInformation createVideoInformation(List<VideoFrame> frames, int milliseconds, File input) {
         VideoInformation resultInformation;
         String uuid = input.getName().substring(0, input.getName().indexOf("."));
         resultInformation = new VideoInformation(frames, uuid, milliseconds);
