@@ -6,7 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class TextProcessor {
-    private final static String regexStringWhitelist = "[^a-zA-Z0-9æøåÆØÅ .,!?]";
+    private final static String regexStringWhitelist = "[^a-zA-Z0-9æøåÆØÅ .,!?%]";
     private final static String regexStringNumbers = "[^0-9";
     private final static String[] wordsWithoutVowels = {
             "bh", "bs", "cd", "cg", "cl", "cm", "cv", "dg", "dj", "dl", "dm", "fm", "fx", "hd", "hf", "hg", "hh", "hk",
