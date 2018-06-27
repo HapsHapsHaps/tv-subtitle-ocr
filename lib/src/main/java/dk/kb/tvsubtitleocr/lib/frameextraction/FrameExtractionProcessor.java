@@ -27,7 +27,7 @@ public class FrameExtractionProcessor implements IFrameExtractionProcessor {
     private FFmpeg ffmpeg;
     private File workDir;
 //    private double framesPerSecond = 1;
-    private double framesPerSecond = 0.5;
+    private double framesPerSecond = 1;
     private String output; //decides name(%d for digits) + extention(.png) for the output
     //    private String ffmpegPath = "/usr/bin/ffmpeg";
 //    private String ffprobePath = "/usr/bin/ffprobe";
